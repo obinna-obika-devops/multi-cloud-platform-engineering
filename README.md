@@ -1,69 +1,109 @@
 # Multi-Cloud Platform Engineering
 
-<p align="center"><strong>Portable platform contracts without pretending clouds are identical.</strong></p>
+<p align="center"><strong>Azure-first platform engineering with explicit AWS portability.</strong></p>
 
 <p align="center">
-<img src="https://img.shields.io/badge/AWS-Multi--Cloud-orange?logo=amazonaws" alt="AWS">
-<img src="https://img.shields.io/badge/Azure-Multi--Cloud-0078D4?logo=microsoftazure" alt="Azure">
+<img src="https://img.shields.io/badge/Azure-AKS%20Platform-0078D4?logo=microsoftazure" alt="Azure AKS">
+<img src="https://img.shields.io/badge/AWS-Platform%20Patterns-orange?logo=amazonaws" alt="AWS">
 <img src="https://img.shields.io/badge/Terraform-IaC-7B42BC?logo=terraform" alt="Terraform">
 <img src="https://img.shields.io/badge/Kubernetes-Platform-326CE5?logo=kubernetes" alt="Kubernetes">
 </p>
 
-A multi-cloud architecture lab focused on the hard part of AWS + Azure: defining portable platform contracts while preserving provider-specific capabilities.
+A platform-engineering reference implementation centered on **Azure AKS**, while preserving explicit AWS portability. The project demonstrates how networking, identity, Kubernetes, observability, security and delivery controls can be expressed as a platform contract without pretending cloud providers are identical.
+
+## Azure flagship track
+
+The Azure implementation now includes inspectable Terraform for:
+
+- Resource group and governance tags
+- Azure VNet and dedicated AKS subnet
+- Azure Kubernetes Service
+- Cluster autoscaling
+- Azure RBAC integration
+- OIDC issuer and workload identity
+- Azure Container Registry
+- Least-privilege `AcrPull` assignment
+- Log Analytics integration
+- CI validation with GitHub Actions
+
+Start here:
+
+- [Azure AKS Terraform](terraform/azure/main.tf)
+- [Azure architecture](docs/azure-aks-architecture.md)
+- [Azure CI validation](.github/workflows/azure-terraform-validate.yml)
 
 ## Platform architecture
 
 ```mermaid
 flowchart TB
-    D[Developer / Platform Consumer] --> C[Common Platform Contract]
+    D[Developer / Platform Consumer] --> G[GitHub]
+    G --> CI[GitHub Actions]
+    CI --> C[Common Platform Contract]
     C --> N[Networking]
     C --> I[Identity]
     C --> K[Kubernetes / Compute]
     C --> O[Observability]
     C --> S[Security]
     C --> F[Cost Controls]
-    C --> A[AWS Implementation]
     C --> Z[Azure Implementation]
-    A --> AT[Provider-specific capabilities]
-    Z --> ZT[Provider-specific capabilities]
+    C --> A[AWS Implementation]
+    Z --> AKS[AKS / ACR / Azure RBAC / Workload Identity]
+    A --> EKS[EKS / AWS-native capabilities]
 ```
 
 ## Platform contract
 
 `network → identity → compute/Kubernetes → observability → security → cost controls`
 
-Terraform examples are separated by provider. Python validates that environment requirements are compatible with a selected cloud rather than pretending the clouds are identical.
+The goal is a common engineering contract with provider-aware implementations. Portability is achieved at the workload and platform-interface level while provider-specific capabilities remain visible.
 
 ## Capability matrix
 
-| Capability | AWS | Azure | Portability approach |
+| Capability | Azure | AWS | Portability approach |
 |---|---|---|---|
-| Networking | VPC | VNet | Common network contract |
-| Identity | IAM | Entra ID / RBAC | Identity interface |
-| Kubernetes | EKS | AKS | Kubernetes workload contract |
-| Observability | Cloud-native integrations | Azure-native integrations | Standard telemetry concepts |
-| Security | AWS controls | Azure controls | Policy requirements |
-| Cost | AWS cost controls | Azure cost controls | Governance contract |
+| Networking | VNet / subnet | VPC / subnet | Common network contract |
+| Identity | Entra ID / Azure RBAC / workload identity | IAM / workload identity patterns | Identity interface |
+| Kubernetes | AKS | EKS | Kubernetes workload contract |
+| Registry | ACR | ECR | Image supply-chain interface |
+| Observability | Azure Monitor / Log Analytics | CloudWatch / managed integrations | Standard telemetry concepts |
+| Security | Azure Policy / Defender patterns | AWS-native controls | Policy requirements |
+| Cost | Azure budgets/cost management | AWS cost controls | Governance contract |
 
 ## Engineering signals
 
-- AWS and Azure capability matrix
-- provider-aware abstractions
+- Azure AKS Infrastructure as Code
+- Managed identity and workload identity design
+- Least-privilege registry access
+- Cluster autoscaling and network-policy configuration
+- Provider-aware abstractions
 - Kubernetes portability considerations
-- identity/network/security tradeoffs
-- policy and environment validation
-- Terraform validation + unit tests
+- Identity/network/security tradeoffs
+- Terraform validation and unit tests
 
 ## Quick start
 
+Validate the Azure implementation without creating cloud resources:
+
 ```bash
-terraform fmt -check -recursive
-terraform validate
+terraform -chdir=terraform/azure fmt -check -recursive
+terraform -chdir=terraform/azure init -backend=false
+terraform -chdir=terraform/azure validate
+```
+
+Run repository tests:
+
+```bash
 pytest -q
 ```
 
-## Design principle
+## Engineering tradeoff
 
-**Abstract the interface, not away the cloud.** Provider differences remain explicit so portability does not become a lowest-common-denominator architecture.
+**Abstract the interface, not away the cloud.** Azure and AWS expose different identity, networking, observability and security capabilities. The platform contract should give developers consistency without forcing both providers into a lowest-common-denominator architecture.
 
-Reference architecture only; no cloud deployment is claimed.
+## Production hardening path
+
+For a live Azure environment, the next controls would include private AKS access, private endpoints, Key Vault integration, environment promotion, Azure Policy, Defender for Cloud, zone-aware node pools, backup/restore validation, tested RTO/RPO, alert routing and cost budgets.
+
+## Scope
+
+This repository is a portfolio/reference implementation. It contains infrastructure code and architecture decisions but does not claim that the Azure or AWS resources shown here are currently running in a customer production environment.
