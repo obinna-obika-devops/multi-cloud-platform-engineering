@@ -1,0 +1,37 @@
+name: Azure Terraform Validate
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/azure/**'
+      - '.github/workflows/azure-terraform-validate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/azure/**'
+      - '.github/workflows/azure-terraform-validate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform format
+        run: terraform -chdir=terraform/azure fmt -check -recursive
+
+      - name: Terraform init
+        run: terraform -chdir=terraform/azure init -backend=false
+
+      - name: Terraform validate
+        run: terraform -chdir=terraform/azure validate
